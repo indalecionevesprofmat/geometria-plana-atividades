@@ -132,6 +132,30 @@
             margin-bottom: 15px;
         }
 
+        .question-image {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+        }
+
+        .question-image img {
+            max-width: 100%;
+            height: auto;
+            max-height: 300px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .image-caption {
+            font-style: italic;
+            color: #666;
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+
         .options {
             display: grid;
             gap: 10px;
@@ -418,6 +442,16 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="questionImage">URL da Imagem (opcional):</label>
+                        <input type="text" id="questionImage" placeholder="nome-da-imagem.jpg">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="imageCaption">Legenda da Imagem (opcional):</label>
+                        <input type="text" id="imageCaption" placeholder="Legenda para a imagem">
+                    </div>
+
+                    <div class="form-group">
                         <label>Opções (use $...$ para fórmulas matemáticas):</label>
                         <input type="text" id="optionA" placeholder="Opção A">
                         <input type="text" id="optionB" placeholder="Opção B">
@@ -467,10 +501,12 @@
                     "$12$",
                     "$14$"
                 ],
-                correct: 3
+                correct: 3,
+                image: null,
+                imageCaption: null
             },
             {
-                question: "Uma bola de futebol pode ser representada por um poliedro formado por 12 faces pentagonais e 20 faces hexagonais, todas com lados congruentes entre si. Sabe-se que, para costurar essas faces lado a lado, formando a super ície da bola, usa-se 20 cm de linha em cada aresta do poliedro. Qual é o comprimento total de linha que será gasta para costurar toda a bola, em metros?",
+                question: "Uma bola de futebol pode ser representada por um poliedro formado por 12 faces pentagonais e 20 faces hexagonais, todas com lados congruentes entre si. Sabe-se que, para costurar essas faces lado a lado, formando a superfície da bola, usa-se 20 cm de linha em cada aresta do poliedro. Qual é o comprimento total de linha que será gasta para costurar toda a bola, em metros?",
                 options: [
                     "$18 m$",
                     "$24 m$", 
@@ -478,24 +514,26 @@
                     "$36 m$",
                     "$40 m$"
                 ],
-                correct: 0
+                correct: 0,
+                image: "bola.jpg",
+                imageCaption: "Bola de futebol representada como poliedro"
             },
             {
                 question: "Uma indústria precisa fabricar 10 000 caixas de sabão com as medidas da figura abaixo. Desprezando as abas, calcule, aproximadamente, quantos metros quadrados de papelão serão necessários?",
                 options: ["321,8", "3280", "3820", "3208", "32,8"],
-                correct: 1
+                correct: 1,
+                image: null,
+                imageCaption: null
             },
             {
-                question: "Em um prisma hexagonal regular, a aresta da base mede 3 cm e a aresta da face lateral mede 6 cm. Qual é, aproximadamente, a sua área total? (em metros quadrados",
+                question: "Em um prisma hexagonal regular, a aresta da base mede 3 cm e a aresta da face lateral mede 6 cm. Qual é, aproximadamente, a sua área total? (em metros quadrados)",
                 options: ["153,9 ", "15,39", "1,539", "108", "180"],
-                correct: 0
+                correct: 0,
+                image: null,
+                imageCaption: null
             },
             {
                 question: "(Enem) Um fazendeiro tem um depósito para armazenar leite formado por duas partes cúbicas que se comunicam, como indicado na figura. A aresta da parte cúbica de baixo tem medida igual ao dobro da medida da aresta da parte cúbica de cima. A torneira utilizada para encher o depósito tem vazão constante e levou minutos para encher metade da parte de baixo. Quantos minutos essa torneira levará para encher completamente o restante do depósito?",
-
-
-
-
                 options: [
                     "$8$",
                     "$10$", 
@@ -503,7 +541,9 @@
                     "$18$",
                     "$24$"
                 ],
-                correct: 1
+                correct: 1,
+                image: null,
+                imageCaption: null
             }
         ];
 
@@ -644,12 +684,24 @@
             const question = questions[currentQuestion];
             const questionsArea = document.getElementById('questionsArea');
             
+            // Construir o HTML da questão incluindo a imagem se existir
+            let imageHTML = '';
+            if (question.image) {
+                imageHTML = `
+                    <div class="question-image">
+                        <img src="${question.image}" alt="Imagem da questão">
+                        ${question.imageCaption ? `<div class="image-caption">${question.imageCaption}</div>` : ''}
+                    </div>
+                `;
+            }
+            
             questionsArea.innerHTML = `
                 <div class="question">
                     <h3>Questão ${currentQuestion + 1} de ${questions.length}</h3>
                     <div class="math-display math-loading">
                         ${question.question}
                     </div>
+                    ${imageHTML}
                     <div class="options">
                         ${question.options.map((option, index) => `
                             <div class="option" onclick="selectAnswer(${index})">
@@ -658,12 +710,7 @@
                             </div>
                         `).join('')}
                     </div>
-                    <div style="margin-top: 20px;">
-                        ${currentQuestion < questions.length - 1 ? 
-                            '<button class="btn" onclick="nextQuestion()">Próxima Questão →</button>' : 
-                            '<button class="btn btn-success" onclick="finishQuiz()">🏁 Finalizar Avaliação</button>'
-                        }
-                    </div>
+                    <!-- BOTÕES DE NAVEGAÇÃO REMOVIDOS PARA AVANÇO AUTOMÁTICO -->
                 </div>
             `;
 
@@ -699,9 +746,7 @@
             const correctIndex = questions[currentQuestion].correct;
             if (answerIndex !== correctIndex) {
                 event.target.classList.add('incorrect');
-                options[correctIndex].classList.add('selected');
-                
-                // Tocar som de erro
+                // NÃO MOSTRAR A RESPOSTA CORRETA - APENAS MARCA A ERRADA COMO VERMELHA
                 playErrorSound();
                 
                 // Avançar automaticamente após 2 segundos
@@ -712,6 +757,11 @@
                 // Tocar som de acerto e mostrar fogos de artifício
                 playSuccessSound();
                 createFireworks();
+                
+                // Avançar automaticamente após 1 segundo no acerto
+                setTimeout(() => {
+                    nextQuestion();
+                }, 1000);
             }
         }
 
@@ -753,7 +803,7 @@
                 message.textContent = "📚 Boa tentativa! Estude mais e tente novamente!";
                 message.style.color = "#e67e22";
             } else {
-                message.textContent = "💪 Não desista! A prática leva à perfeição!";
+                message.textContent = "💪 Não desiste! A prática leva à perfeição!";
                 message.style.color = "#e74c3c";
             }
 
@@ -982,6 +1032,7 @@
                     <strong>Q${index + 1}:</strong> ${question.question.substring(0, 80)}...
                     <br>
                     <small>Resposta: ${String.fromCharCode(65 + question.correct)}</small>
+                    ${question.image ? `<br><small>Imagem: ${question.image}</small>` : ''}
                     <button class="btn btn-danger" onclick="deleteQuestion(${index})" style="float: right; padding: 5px 10px; font-size: 12px;">🗑️ Excluir</button>
                 `;
                 questionsList.appendChild(questionItem);
@@ -993,6 +1044,8 @@
 
         async function addQuestion() {
             const newQuestion = document.getElementById('newQuestion').value;
+            const questionImage = document.getElementById('questionImage').value;
+            const imageCaption = document.getElementById('imageCaption').value;
             const optionA = document.getElementById('optionA').value;
             const optionB = document.getElementById('optionB').value;
             const optionC = document.getElementById('optionC').value;
@@ -1000,20 +1053,24 @@
             const correctAnswer = parseInt(document.getElementById('correctAnswer').value);
 
             if (!newQuestion || !optionA || !optionB || !optionC || !optionD) {
-                alert('Por favor, preencha todos os campos!');
+                alert('Por favor, preencha todos os campos obrigatórios!');
                 return;
             }
 
             questions.push({
                 question: newQuestion,
                 options: [optionA, optionB, optionC, optionD],
-                correct: correctAnswer
+                correct: correctAnswer,
+                image: questionImage || null,
+                imageCaption: imageCaption || null
             });
 
             localStorage.setItem('quizQuestions', JSON.stringify(questions));
             
             // Limpar campos
             document.getElementById('newQuestion').value = '';
+            document.getElementById('questionImage').value = '';
+            document.getElementById('imageCaption').value = '';
             document.getElementById('optionA').value = '';
             document.getElementById('optionB').value = '';
             document.getElementById('optionC').value = '';
