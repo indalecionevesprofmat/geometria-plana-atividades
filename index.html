@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Avaliação Matemática</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- MathJax Configuração Corrigida -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                packages: {'[+]': ['ams', 'color']}
+            },
+            svg: {
+                fontCache: 'global'
+            },
+            startup: {
+                pageReady: function() {
+                    return MathJax.startup.defaultPageReady().then(function() {
+                        console.log('MathJax está inicializado e pronto');
+                        window.mathJaxReady = true;
+                    });
+                }
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tab-container {
+            display: flex;
+            background: #34495e;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: #34495e;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .tab:hover {
+            background: #2c3e50;
+        }
+
+        .tab.active {
+            background: #3498db;
+        }
+
+        .content {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .question {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+        }
+
+        .question h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option {
+            padding: 15px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .option:hover {
+            border-color: #3498db;
+            background: #f1f8ff;
+        }
+
+        .option.selected {
+            border-color: #27ae60;
+            background: #d5f4e6;
+        }
+
+        .option.incorrect {
+            border-color: #e74c3c;
+            background: #fadbd8;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        .option-letter {
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 20px;
+        }
+
+        .option-content {
+            flex: 1;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #229954);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .fireworks {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        .firework {
+            position: absolute;
+            border-radius: 50%;
+            animation: explode 1.5s ease-out forwards;
+            box-shadow: 0 0 10px 2px currentColor;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .result {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .score {
+            font-size: 3em;
+            color: #3498db;
+            margin: 20px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .teacher-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        #questionsList {
+            margin: 20px 0;
+        }
+
+        .question-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .login-form {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .math-display {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+            border: 1px solid #e9ecef;
+            font-size: 1.1em;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+
+        .theme-badge {
+            background: linear-gradient(135deg, #8B4513, #D2691E);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .dependent-field {
+            margin-left: 20px;
+            border-left: 3px solid #3498db;
+            padding-left: 15px;
+        }
+
+        /* Estilos para MathJax */
+        mjx-container {
+            outline: none;
+        }
+
+        .math-loading {
+            opacity: 0.7;
+        }
+
+        .math-loaded {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Indicador de áudio */
+        .audio-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1001;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Sistema de Avaliação Matemática</h1>
+        </div>
+
+        <div class="tab-container">
+            <button class="tab active" onclick="showTab('student')">Aluno</button>
+            <button class="tab" onclick="showTab('teacher')">Professor</button>
+        </div>
+
+        <!-- ABA DO ALUNO -->
+        <div id="studentTab" class="content">
+            <div id="studentForm">
+                <div class="form-group">
+                    <label for="school">Escola:</label>
+                    <select id="school" onchange="updateEducationLevels()">
+                        <option value="">Selecione sua escola</option>
+                        <option value="José Wilson">EEEFM Prof° José Wilson Pereira Leite</option>
+                        <option value="CEAM">CEAM - Colégio Estadual de Ensino Médio Integral Archangela Milhomem</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="educationLevel">Nível de Ensino:</label>
+                    <select id="educationLevel" onchange="updateClasses()" disabled>
+                        <option value="">Selecione o nível de ensino</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="studentClass">Turma/Série:</label>
+                    <select id="studentClass" disabled>
+                        <option value="">Selecione sua turma/série</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="studentName">Nome completo:</label>
+                    <input type="text" id="studentName" placeholder="Digite seu nome">
+                </div>
+
+                <button class="btn" onclick="startQuiz()">Iniciar Avaliação</button>
+            </div>
+
+            <div id="quizContainer" class="hidden">
+                <div id="questionsArea"></div>
+            </div>
+
+            <div id="resultsContainer" class="hidden">
+                <div class="result">
+                    <h2>🎉 Avaliação Concluída!</h2>
+                    <div class="score" id="finalScore">0/0</div>
+                    <p id="resultMessage"></p>
+                    <button class="btn btn-success" onclick="shareResults()">📤 Compartilhar Resultado</button>
+                    <button class="btn" onclick="resetQuiz()">🔄 Nova Tentativa</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA DO PROFESSOR -->
+        <div id="teacherTab" class="content hidden">
+            <div id="teacherLogin">
+                <div class="login-form">
+                    <h2>Acesso do Professor</h2>
+                    <div class="form-group">
+                        <label for="teacherPassword">Senha:</label>
+                        <input type="password" id="teacherPassword" placeholder="Digite a senha">
+                    </div>
+                    <button class="btn" onclick="loginTeacher()">Acessar</button>
+                </div>
+            </div>
+
+            <div id="teacherPanel" class="hidden">
+                <h2>Painel do Professor</h2>
+                <div class="teacher-panel">
+                    <h3>Gerenciar Questões</h3>
+                    
+                    <div class="form-group">
+                        <label for="newQuestion">Nova Questão (use $...$ para fórmulas matemáticas):</label>
+                        <textarea id="newQuestion" placeholder="Digite a questão" rows="3"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Opções (use $...$ para fórmulas matemáticas):</label>
+                        <input type="text" id="optionA" placeholder="Opção A">
+                        <input type="text" id="optionB" placeholder="Opção B">
+                        <input type="text" id="optionC" placeholder="Opção C">
+                        <input type="text" id="optionD" placeholder="Opção D">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="correctAnswer">Resposta Correta:</label>
+                        <select id="correctAnswer">
+                            <option value="0">A</option>
+                            <option value="1">B</option>
+                            <option value="2">C</option>
+                            <option value="3">D</option>
+                        </select>
+                    </div>
+
+                    <button class="btn" onclick="addQuestion()">Adicionar Questão</button>
+
+                    <div id="questionsList">
+                        <!-- Lista de questões será gerada aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Indicador de áudio -->
+    <div class="audio-indicator" id="audioIndicator">🔊 Reproduzindo som...</div>
+
+    <script>
+        // Configuração inicial
+        const TEACHER_PASSWORD = "prof123";
+        const TEACHER_WHATSAPP = "+5594991446645";
+        
+        // Variável global para controle do MathJax
+        window.mathJaxReady = false;
+        
+        // Questões com notação LaTeX corrigida e símbolos especiais escapados
+        let questions = JSON.parse(localStorage.getItem('quizQuestions')) || [
+            {
+                question: "Qual é o número de vértices de um poliedro convexo que tem 3 faces triangulares, 1 face quadrangular, 1 face pentagonal e 2 faces hexagonais?",
+                options: [
+                    "$7$",
+                    "$9$", 
+                    "$10$",
+                    "$12$",
+                    "$14$"
+                ],
+                correct: 3
+            },
+            {
+                question: "Uma bola de futebol pode ser representada por um poliedro formado por 12 faces pentagonais e 20 faces hexagonais, todas com lados congruentes entre si. Sabe-se que, para costurar essas faces lado a lado, formando a super ície da bola, usa-se 20 cm de linha em cada aresta do poliedro. Qual é o comprimento total de linha que será gasta para costurar toda a bola, em metros?",
+                options: [
+                    "$18 m$",
+                    "$24 m$", 
+                    "$30 m$",
+                    "$36 m$",
+                    "$40 m$"
+                ],
+                correct: 0
+            },
+            {
+                question: "Uma indústria precisa fabricar 10 000 caixas de sabão com as medidas da figura abaixo. Desprezando as abas, calcule, aproximadamente, quantos metros quadrados de papelão serão necessários?",
+                options: ["321,8", "3280", "3820", "3208", "32,8"],
+                correct: 1
+            },
+            {
+                question: "Em um prisma hexagonal regular, a aresta da base mede 3 cm e a aresta da face lateral mede 6 cm. Qual é, aproximadamente, a sua área total? (em metros quadrados",
+                options: ["153,9 ", "15,39", "1,539", "108", "180"],
+                correct: 0
+            },
+            {
+                question: "(Enem) Um fazendeiro tem um depósito para armazenar leite formado por duas partes cúbicas que se comunicam, como indicado na figura. A aresta da parte cúbica de baixo tem medida igual ao dobro da medida da aresta da parte cúbica de cima. A torneira utilizada para encher o depósito tem vazão constante e levou minutos para encher metade da parte de baixo. Quantos minutos essa torneira levará para encher completamente o restante do depósito?",
+
+
+
+
+                options: [
+                    "$8$",
+                    "$10$", 
+                    "$16$",
+                    "$18$",
+                    "$24$"
+                ],
+                correct: 1
+            }
+        ];
+
+        let studentAnswers = [];
+        let currentQuestion = 0;
+        let canAnswer = true; // Para controlar se o usuário pode responder
+
+        // Função para processar MathJax de forma segura
+        function processMathJax(element) {
+            if (!window.MathJax) {
+                console.warn('MathJax não está carregado');
+                return Promise.resolve();
+            }
+            
+            if (!window.mathJaxReady) {
+                console.warn('MathJax não está pronto');
+                return Promise.resolve();
+            }
+            
+            return MathJax.typesetPromise([element]).catch(error => {
+                console.error('Erro ao processar MathJax:', error);
+                // Tentar novamente após um delay
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        if (window.MathJax && window.mathJaxReady) {
+                            MathJax.typesetPromise([element]).then(resolve).catch(() => resolve());
+                        } else {
+                            resolve();
+                        }
+                    }, 500);
+                });
+            });
+        }
+
+        // Funções para atualizar os campos dependentes - CORRIGIDAS
+        function updateEducationLevels() {
+            const school = document.getElementById('school').value;
+            const educationLevel = document.getElementById('educationLevel');
+            const studentClass = document.getElementById('studentClass');
+            
+            // Reset dos campos dependentes
+            educationLevel.innerHTML = '<option value="">Selecione o nível de ensino</option>';
+            studentClass.innerHTML = '<option value="">Selecione sua turma/série</option>';
+            studentClass.disabled = true;
+            educationLevel.disabled = true;
+            
+            if (school === 'José Wilson') {
+                educationLevel.disabled = false;
+                educationLevel.innerHTML += `
+                    <option value="Fundamental">Ensino Fundamental</option>
+                    <option value="Médio">Ensino Médio</option>
+                `;
+            } else if (school === 'CEAM') {
+                educationLevel.disabled = false;
+                educationLevel.innerHTML += `
+                    <option value="Médio">Ensino Médio Integral</option>
+                `;
+                // Para CEAM, atualizar automaticamente as turmas
+                setTimeout(updateClasses, 100);
+            }
+        }
+
+        function updateClasses() {
+            const school = document.getElementById('school').value;
+            const educationLevel = document.getElementById('educationLevel').value;
+            const studentClass = document.getElementById('studentClass');
+            
+            studentClass.innerHTML = '<option value="">Selecione sua turma/série</option>';
+            studentClass.disabled = true;
+            
+            if (school === 'José Wilson') {
+                if (educationLevel === 'Fundamental') {
+                    studentClass.disabled = false;
+                    studentClass.innerHTML += `
+                        <option value="7° Ano">7° Ano</option>
+                        <option value="8° Ano">8° Ano</option>
+                        <option value="9° Ano">9° Ano</option>
+                    `;
+                } else if (educationLevel === 'Médio') {
+                    studentClass.disabled = false;
+                    studentClass.innerHTML += `
+                        <option value="1° Ano">1° Ano</option>
+                        <option value="2° Ano">2° Ano</option>
+                        <option value="3° Ano">3° Ano</option>
+                    `;
+                }
+            } else if (school === 'CEAM') {
+                studentClass.disabled = false;
+                studentClass.innerHTML += `
+                    <option value="23.01">23.01</option>
+                    <option value="23.02">23.02</option>
+                    <option value="33.01">33.01</option>
+                    <option value="33.02">33.02</option>
+                `;
+            }
+        }
+
+        // Funções de navegação
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(content => content.classList.add('hidden'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + 'Tab').classList.remove('hidden');
+            
+            // Reprocessar MathJax ao mudar de aba
+            setTimeout(() => {
+                const activeTab = document.getElementById(tabName + 'Tab');
+                if (activeTab) {
+                    processMathJax(activeTab);
+                }
+            }, 100);
+        }
+
+        // Funções do aluno
+        function startQuiz() {
+            const name = document.getElementById('studentName').value;
+            const school = document.getElementById('school').value;
+            const educationLevel = document.getElementById('educationLevel').value;
+            const studentClass = document.getElementById('studentClass').value;
+            
+            if (!name || !school || !educationLevel || !studentClass) {
+                alert('Por favor, preencha todos os campos!');
+                return;
+            }
+
+            document.getElementById('studentForm').classList.add('hidden');
+            document.getElementById('quizContainer').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        async function loadQuestion() {
+            if (currentQuestion >= questions.length) {
+                finishQuiz();
+                return;
+            }
+
+            const question = questions[currentQuestion];
+            const questionsArea = document.getElementById('questionsArea');
+            
+            questionsArea.innerHTML = `
+                <div class="question">
+                    <h3>Questão ${currentQuestion + 1} de ${questions.length}</h3>
+                    <div class="math-display math-loading">
+                        ${question.question}
+                    </div>
+                    <div class="options">
+                        ${question.options.map((option, index) => `
+                            <div class="option" onclick="selectAnswer(${index})">
+                                <span class="option-letter">${String.fromCharCode(65 + index)})</span>
+                                <span class="option-content">${option}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="margin-top: 20px;">
+                        ${currentQuestion < questions.length - 1 ? 
+                            '<button class="btn" onclick="nextQuestion()">Próxima Questão →</button>' : 
+                            '<button class="btn btn-success" onclick="finishQuiz()">🏁 Finalizar Avaliação</button>'
+                        }
+                    </div>
+                </div>
+            `;
+
+            // Processar MathJax após inserir o conteúdo
+            try {
+                await processMathJax(questionsArea);
+                // Remover classe de loading após processamento
+                const mathDisplay = questionsArea.querySelector('.math-display');
+                if (mathDisplay) {
+                    mathDisplay.classList.remove('math-loading');
+                    mathDisplay.classList.add('math-loaded');
+                }
+            } catch (error) {
+                console.error('Erro ao processar MathJax:', error);
+            }
+            
+            canAnswer = true; // Permitir respostas novamente
+        }
+
+        function selectAnswer(answerIndex) {
+            if (!canAnswer) return; // Impedir múltiplas respostas
+            canAnswer = false; // Bloquear respostas adicionais
+            
+            const options = document.querySelectorAll('.option');
+            options.forEach(opt => {
+                opt.classList.remove('selected', 'incorrect');
+            });
+            
+            event.target.classList.add('selected');
+            studentAnswers[currentQuestion] = answerIndex;
+
+            // Feedback imediato
+            const correctIndex = questions[currentQuestion].correct;
+            if (answerIndex !== correctIndex) {
+                event.target.classList.add('incorrect');
+                options[correctIndex].classList.add('selected');
+                
+                // Tocar som de erro
+                playErrorSound();
+                
+                // Avançar automaticamente após 2 segundos
+                setTimeout(() => {
+                    nextQuestion();
+                }, 2000);
+            } else {
+                // Tocar som de acerto e mostrar fogos de artifício
+                playSuccessSound();
+                createFireworks();
+            }
+        }
+
+        async function nextQuestion() {
+            currentQuestion++;
+            await loadQuestion();
+        }
+
+        function finishQuiz() {
+            if (studentAnswers[currentQuestion] === undefined && currentQuestion < questions.length) {
+                alert('Por favor, selecione uma resposta para esta questão!');
+                return;
+            }
+
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+
+            let score = 0;
+            questions.forEach((question, index) => {
+                if (studentAnswers[index] === question.correct) {
+                    score++;
+                }
+            });
+
+            const finalScore = document.getElementById('finalScore');
+            finalScore.textContent = `${score}/${questions.length}`;
+
+            const percentage = (score / questions.length) * 100;
+            const message = document.getElementById('resultMessage');
+            
+            if (percentage >= 80) {
+                message.textContent = "🏆 Excelente! Você dominou os desafios matemáticos!";
+                message.style.color = "#27ae60";
+                createFireworks();
+            } else if (percentage >= 60) {
+                message.textContent = "⭐ Bom trabalho! Continue estudando!";
+                message.style.color = "#f39c12";
+            } else if (percentage >= 40) {
+                message.textContent = "📚 Boa tentativa! Estude mais e tente novamente!";
+                message.style.color = "#e67e22";
+            } else {
+                message.textContent = "💪 Não desista! A prática leva à perfeição!";
+                message.style.color = "#e74c3c";
+            }
+
+            setTimeout(() => {
+                alert('Avaliação finalizada com sucesso! Seu resultado está pronto para ser compartilhado.');
+            }, 1000);
+        }
+
+        // Função para tocar som de erro
+        function playErrorSound() {
+            const audioIndicator = document.getElementById('audioIndicator');
+            audioIndicator.style.display = 'block';
+            audioIndicator.textContent = '🔊 Som de erro...';
+            
+            // Criar contexto de áudio
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Criar oscilador para o som de erro (pel, pel, pel, pel)
+            let time = audioContext.currentTime;
+            
+            // Criar 4 tons curtos
+            for (let i = 0; i < 4; i++) {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(300 + i * 50, time); // Frequência aumenta a cada tom
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Envelope do som
+                gainNode.gain.setValueAtTime(0, time);
+                gainNode.gain.linearRampToValueAtTime(0.3, time + 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, time + 0.15);
+                
+                oscillator.start(time);
+                oscillator.stop(time + 0.15);
+                
+                time += 0.2; // Espaço entre os tons
+            }
+            
+            // Som de palmas após os tons
+            setTimeout(() => {
+                audioIndicator.textContent = '🔊 Palmas...';
+                
+                // Criar ruído para simular palmas
+                const bufferSize = audioContext.sampleRate * 0.1; // 0.1 segundos
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1; // Ruído branco
+                }
+                
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                
+                const gainNode = audioContext.createGain();
+                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                source.start();
+                
+                // Esconder indicador após o som
+                setTimeout(() => {
+                    audioIndicator.style.display = 'none';
+                }, 500);
+            }, 900);
+        }
+
+        // Função para tocar som de acerto
+        function playSuccessSound() {
+            const audioIndicator = document.getElementById('audioIndicator');
+            audioIndicator.style.display = 'block';
+            audioIndicator.textContent = '🔊 Som de acerto!';
+            
+            // Criar contexto de áudio
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Criar oscilador para o som de acerto (tom ascendente)
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.5);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Envelope do som
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+            
+            // Som de palmas após o tom
+            setTimeout(() => {
+                audioIndicator.textContent = '🔊 Palmas!';
+                
+                // Criar ruído para simular palmas
+                const bufferSize = audioContext.sampleRate * 0.3; // 0.3 segundos
+                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1; // Ruído branco
+                }
+                
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                
+                const gainNode2 = audioContext.createGain();
+                gainNode2.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                source.connect(gainNode2);
+                gainNode2.connect(audioContext.destination);
+                
+                source.start();
+                
+                // Esconder indicador após o som
+                setTimeout(() => {
+                    audioIndicator.style.display = 'none';
+                }, 500);
+            }, 600);
+        }
+
+        // Função melhorada para criar fogos de artifício - MAIORES E MAIS QUANTIDADE
+        function createFireworks() {
+            const fireworks = document.createElement('div');
+            fireworks.className = 'fireworks';
+            document.body.appendChild(fireworks);
+
+            // Criar 150 partículas (aumentado de 50)
+            for (let i = 0; i < 150; i++) {
+                setTimeout(() => {
+                    const firework = document.createElement('div');
+                    firework.className = 'firework';
+                    
+                    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500'];
+                    firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    const startX = Math.random() * window.innerWidth;
+                    const startY = Math.random() * window.innerHeight;
+                    const angle = Math.random() * 2 * Math.PI;
+                    const distance = 50 + Math.random() * 100; // Aumentada a distância
+                    
+                    // Tamanho aumentado de 4px para 8px
+                    const size = 6 + Math.random() * 6;
+                    firework.style.width = size + 'px';
+                    firework.style.height = size + 'px';
+                    
+                    firework.style.left = startX + 'px';
+                    firework.style.top = startY + 'px';
+                    firework.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+                    firework.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+
+                    fireworks.appendChild(firework);
+                }, i * 20); // Intervalo menor para mais explosões simultâneas
+            }
+
+            setTimeout(() => {
+                if (document.body.contains(fireworks)) {
+                    document.body.removeChild(fireworks);
+                }
+            }, 2000);
+        }
+
+        function shareResults() {
+            const name = document.getElementById('studentName').value;
+            const school = document.getElementById('school').value;
+            const educationLevel = document.getElementById('educationLevel').value;
+            const studentClass = document.getElementById('studentClass').value;
+            const score = document.getElementById('finalScore').textContent;
+            const percentage = (parseInt(score.split('/')[0]) / parseInt(score.split('/')[1]) * 100).toFixed(1);
+            
+            const message = `📊 Resultado da Avaliação de Matemática\n\n👤 Aluno: ${name}\n🏫 Escola: ${getSchoolFullName(school)}\n📚 Nível: ${educationLevel}\n🧩 Turma: ${studentClass}\n📊 Nota: ${score} (${percentage}%)\n📅 Data: ${new Date().toLocaleDateString('pt-BR')}\n\nAvaliação sobre conceitos avançados de probabilidade!`;
+
+            const whatsappUrl = `https://wa.me/${TEACHER_WHATSAPP}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function getSchoolFullName(schoolCode) {
+            if (schoolCode === 'José Wilson') {
+                return 'EEEFM Prof° José Wilson Pereira Leite';
+            } else if (schoolCode === 'CEAM') {
+                return 'CEAM - Colégio Estadual de Ensino Médio Integral Archangela Milhomem';
+            }
+            return schoolCode;
+        }
+
+        function resetQuiz() {
+            currentQuestion = 0;
+            studentAnswers = [];
+            document.getElementById('resultsContainer').classList.add('hidden');
+            document.getElementById('studentForm').classList.remove('hidden');
+        }
+
+        // Funções do professor
+        function loginTeacher() {
+            const password = document.getElementById('teacherPassword').value;
+            
+            if (password === TEACHER_PASSWORD) {
+                document.getElementById('teacherLogin').classList.add('hidden');
+                document.getElementById('teacherPanel').classList.remove('hidden');
+                loadQuestionsList();
+            } else {
+                alert('Senha incorreta! Tente novamente.');
+            }
+        }
+
+        async function loadQuestionsList() {
+            const questionsList = document.getElementById('questionsList');
+            questionsList.innerHTML = '<h4>Questões Cadastradas:</h4>';
+
+            questions.forEach((question, index) => {
+                const questionItem = document.createElement('div');
+                questionItem.className = 'question-item';
+                questionItem.innerHTML = `
+                    <strong>Q${index + 1}:</strong> ${question.question.substring(0, 80)}...
+                    <br>
+                    <small>Resposta: ${String.fromCharCode(65 + question.correct)}</small>
+                    <button class="btn btn-danger" onclick="deleteQuestion(${index})" style="float: right; padding: 5px 10px; font-size: 12px;">🗑️ Excluir</button>
+                `;
+                questionsList.appendChild(questionItem);
+            });
+
+            // Processar MathJax na lista de questões
+            await processMathJax(questionsList);
+        }
+
+        async function addQuestion() {
+            const newQuestion = document.getElementById('newQuestion').value;
+            const optionA = document.getElementById('optionA').value;
+            const optionB = document.getElementById('optionB').value;
+            const optionC = document.getElementById('optionC').value;
+            const optionD = document.getElementById('optionD').value;
+            const correctAnswer = parseInt(document.getElementById('correctAnswer').value);
+
+            if (!newQuestion || !optionA || !optionB || !optionC || !optionD) {
+                alert('Por favor, preencha todos os campos!');
+                return;
+            }
+
+            questions.push({
+                question: newQuestion,
+                options: [optionA, optionB, optionC, optionD],
+                correct: correctAnswer
+            });
+
+            localStorage.setItem('quizQuestions', JSON.stringify(questions));
+            
+            // Limpar campos
+            document.getElementById('newQuestion').value = '';
+            document.getElementById('optionA').value = '';
+            document.getElementById('optionB').value = '';
+            document.getElementById('optionC').value = '';
+            document.getElementById('optionD').value = '';
+
+            await loadQuestionsList();
+            alert('Questão adicionada com sucesso!');
+        }
+
+        async function deleteQuestion(index) {
+            if (confirm('Tem certeza que deseja excluir esta questão?')) {
+                questions.splice(index, 1);
+                localStorage.setItem('quizQuestions', JSON.stringify(questions));
+                await loadQuestionsList();
+                alert('Questão excluída!');
+            }
+        }
+
+        // Inicialização quando MathJax estiver pronto
+        if (window.MathJax) {
+            MathJax.startup.promise.then(() => {
+                window.mathJaxReady = true;
+                console.log('MathJax inicializado com sucesso');
+                
+                // Processar conteúdo inicial se necessário
+                const studentTab = document.getElementById('studentTab');
+                if (studentTab && !studentTab.classList.contains('hidden')) {
+                    processMathJax(studentTab);
+                }
+            }).catch((error) => {
+                console.error('Erro ao inicializar MathJax:', error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Sistema de Avaliação carregado!');
+        });
+    </script>
+</body>
+</html>
