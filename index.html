@@ -7,7 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <!-- MathJax Configuração Corrigida -->
+    <!-- MathJax Configuração -->
     <script>
         window.MathJax = {
             tex: {
@@ -372,6 +372,59 @@
             color: #666;
             margin-top: 5px;
         }
+        
+        /* Instruções para upload */
+        .upload-instructions {
+            background: #e8f4fd;
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .upload-instructions h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .upload-instructions ol {
+            margin-left: 20px;
+        }
+        
+        .upload-instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .code-example {
+            background: #2c3e50;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        
+        .url-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 8px;
+            margin: 5px 0;
+            font-size: 0.9em;
+            word-break: break-all;
+        }
+        
+        #imagePreviewContainer {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        #imagePreview img {
+            max-width: 200px;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -449,6 +502,29 @@
 
             <div id="teacherPanel" class="hidden">
                 <h2>Painel do Professor</h2>
+                
+                <!-- INSTRUÇÕES PARA UPLOAD DE IMAGENS -->
+                <div class="upload-instructions">
+                    <h4>📁 Como Adicionar Imagens às Questões</h4>
+                    <ol>
+                        <li><strong>Crie um repositório no GitHub</strong> chamado "imagens-matematica"</li>
+                        <li><strong>Ative o GitHub Pages</strong> nas configurações do repositório</li>
+                        <li><strong>Faça upload das imagens</strong> para o repositório</li>
+                        <li><strong>Use a URL completa</strong> no formato abaixo:</li>
+                    </ol>
+                    
+                    <div class="code-example">
+                        https://seuusuario.github.io/imagens-matematica/nome-da-imagem.jpg
+                    </div>
+                    
+                    <p><strong>Exemplo prático:</strong></p>
+                    <div class="code-example">
+                        https://joaosilva.github.io/imagens-matematica/piramide-quadrada.jpg
+                    </div>
+                    
+                    <p><em>💡 Dica: Use nomes descritivos sem espaços ou acentos</em></p>
+                </div>
+
                 <div class="teacher-panel">
                     <h3>Gerenciar Questões</h3>
                     
@@ -460,8 +536,15 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="questionImage">URL da Imagem (opcional):</label>
-                        <input type="text" id="questionImage" placeholder="nome-da-imagem.jpg">
+                        <label for="questionImage">URL da Imagem:</label>
+                        <input type="text" id="questionImage" placeholder="https://seuusuario.github.io/imagens-matematica/nome.jpg" oninput="updateImagePreview()">
+                        <div class="help-text">Cole a URL completa da imagem do GitHub Pages</div>
+                        
+                        <!-- Preview da imagem -->
+                        <div id="imagePreviewContainer">
+                            <strong>Pré-visualização:</strong>
+                            <div id="imagePreview"></div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -594,6 +677,30 @@
             // Processar MathJax na visualização
             if (window.mathJaxReady) {
                 processMathJax(preview);
+            }
+        }
+
+        // Função para pré-visualizar imagens
+        function updateImagePreview() {
+            const imageUrl = document.getElementById('questionImage').value;
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const preview = document.getElementById('imagePreview');
+            
+            if (imageUrl && isValidUrl(imageUrl)) {
+                preview.innerHTML = `<img src="${imageUrl}" alt="Pré-visualização" style="max-width: 100%; border-radius: 5px;">`;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        }
+        
+        // Função para validar URLs
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
             }
         }
 
@@ -1133,6 +1240,7 @@
             document.getElementById('optionBPreview').innerHTML = '';
             document.getElementById('optionCPreview').innerHTML = '';
             document.getElementById('optionDPreview').innerHTML = '';
+            document.getElementById('imagePreviewContainer').style.display = 'none';
 
             await loadQuestionsList();
             alert('Questão adicionada com sucesso!');
