@@ -434,8 +434,8 @@
         </div>
 
         <div class="tab-container">
-            <button class="tab active" onclick="showTab('student', event)">Aluno</button>
-            <button class="tab" onclick="showTab('teacher', event)">Professor</button>
+            <button class="tab active" onclick="showTab('student', this)">Aluno</button>
+            <button class="tab" onclick="showTab('teacher', this)">Professor</button>
         </div>
 
         <!-- ABA DO ALUNO -->
@@ -628,14 +628,15 @@
                     "$40 m$"
                 ],
                 correct: 0,
-                <img src="bola.jpg" />
-                            },
+                image: null,
+                imageCaption: null
+            },
             {
                 question: "Uma empresa de embalagens recebeu um pedido para confeccionar 10.000 caixas para transporte de leite longa vida. Cada caixa tem as dimensões internas de 25 cm x 15 cm x 5 cm. Considerando que a espessura do papelão é desprezível e desprezando as abas de fixação, qual é a área total aproximada de papelão, em metros quadrados, necessária para atender a esse pedido?",
                 options: ["321,8", "3280", "3820", "3208", "32,8"],
                 correct: 1,
-                <img src="bloco.jpg" />
-                imageStyle: "width: 40%; height: auto; display: block; margin: 10px auto;"
+                image: null,
+                imageCaption: null
             },
             {
                 question: "Em um prisma hexagonal regular, a aresta da base mede 3 cm e a aresta da face lateral mede 6 cm. Qual é, aproximadamente, a sua área total? (em metros quadrados)",
@@ -796,14 +797,14 @@
         }
 
         // CORREÇÃO: Função showTab corrigida para funcionar com ambas as abas
-        function showTab(tabName, event) {
+        function showTab(tabName, clickedTab) {
             // Remover active de todas as abas
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
             // Esconder todo o conteúdo
             document.querySelectorAll('.content').forEach(content => content.classList.add('hidden'));
             
             // Ativar a aba clicada
-            event.target.classList.add('active');
+            clickedTab.classList.add('active');
             // Mostrar o conteúdo correspondente
             document.getElementById(tabName + 'Tab').classList.remove('hidden');
             
@@ -1280,6 +1281,3 @@
     </script>
 </body>
 </html>
-
-
-
