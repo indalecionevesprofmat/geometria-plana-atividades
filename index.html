@@ -434,8 +434,8 @@
         </div>
 
         <div class="tab-container">
-            <button class="tab active" onclick="showTab('student')">Aluno</button>
-            <button class="tab" onclick="showTab('teacher')">Professor</button>
+            <button class="tab active" onclick="showTab('student', event)">Aluno</button>
+            <button class="tab" onclick="showTab('teacher', event)">Professor</button>
         </div>
 
         <!-- ABA DO ALUNO -->
@@ -628,7 +628,6 @@
                     "$40 m$"
                 ],
                 correct: 0,
-                <img src="bola.jpg" alt="Texto alternativo">
                 image: "bola.jpg",
                 imageCaption: null
             },
@@ -798,12 +797,16 @@
             }
         }
 
-        // Funções de navegação
-        function showTab(tabName) {
+        // CORREÇÃO: Função showTab corrigida para funcionar com ambas as abas
+        function showTab(tabName, event) {
+            // Remover active de todas as abas
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            // Esconder todo o conteúdo
             document.querySelectorAll('.content').forEach(content => content.classList.add('hidden'));
             
+            // Ativar a aba clicada
             event.target.classList.add('active');
+            // Mostrar o conteúdo correspondente
             document.getElementById(tabName + 'Tab').classList.remove('hidden');
             
             // Reprocessar MathJax ao mudar de aba
@@ -847,7 +850,7 @@
                 const imageStyle = question.imageStyle || '';
                 imageHTML = `
                     <div class="question-image">
-                        <img src="${question.image}" alt="Imagem da questão" style="${imageStyle}">
+                        <img src="${question.image}" alt="Imagem da questão" style="${imageStyle}" onerror="this.style.display='none'">
                         ${question.imageCaption ? `<div class="image-caption">${question.imageCaption}</div>` : ''}
                     </div>
                 `;
@@ -862,7 +865,7 @@
                     ${imageHTML}
                     <div class="options">
                         ${question.options.map((option, index) => `
-                            <div class="option" onclick="selectAnswer(${index})">
+                            <div class="option" onclick="selectAnswer(${index}, this)">
                                 <span class="option-letter">${String.fromCharCode(65 + index)})</span>
                                 <span class="option-content">${option}</span>
                             </div>
@@ -888,7 +891,8 @@
             canAnswer = true; // Permitir respostas novamente
         }
 
-        function selectAnswer(answerIndex) {
+        // CORREÇÃO: Função selectAnswer corrigida para sempre mostrar vermelho na resposta incorreta
+        function selectAnswer(answerIndex, optionElement) {
             if (!canAnswer) return; // Impedir múltiplas respostas
             canAnswer = false; // Bloquear respostas adicionais
             
@@ -897,14 +901,14 @@
                 opt.classList.remove('selected', 'incorrect');
             });
             
-            event.target.classList.add('selected');
+            optionElement.classList.add('selected');
             studentAnswers[currentQuestion] = answerIndex;
 
             // Feedback imediato
             const correctIndex = questions[currentQuestion].correct;
             if (answerIndex !== correctIndex) {
-                event.target.classList.add('incorrect');
-                // NÃO MOSTRAR A RESPOSTA CORRETA - APENAS MARCA A ERRADA COMO VERMELHA
+                // CORREÇÃO: Garantir que a opção incorreta sempre fique vermelha
+                optionElement.classList.add('incorrect');
                 playErrorSound();
                 
                 // Avançar automaticamente após 2 segundos
@@ -1278,4 +1282,3 @@
     </script>
 </body>
 </html>
-
