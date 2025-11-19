@@ -343,20 +343,6 @@
             transition: opacity 0.3s ease;
         }
         
-        /* Indicador de áudio */
-        .audio-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 1001;
-            display: none;
-        }
-
         /* Estilo para preview de fórmulas no painel do professor */
         .math-preview {
             background: #f0f8ff;
@@ -424,6 +410,21 @@
             max-width: 200px;
             border-radius: 5px;
             margin-top: 5px;
+        }
+
+        /* Novos estilos para imagens nas alternativas */
+        .option-image-input {
+            margin-top: 8px;
+        }
+        
+        .option-image-preview {
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .option-image-preview img {
+            max-width: 150px;
+            border-radius: 5px;
         }
     </style>
 </head>
@@ -557,18 +558,26 @@
                         <div class="form-group">
                             <input type="text" id="optionA" placeholder="Opção A (use $...$ para fórmulas)" oninput="updateMathPreview('optionA', 'optionAPreview')">
                             <div class="math-preview" id="optionAPreview"></div>
+                            <input type="text" id="optionAImage" class="option-image-input" placeholder="URL da imagem para Opção A (opcional)" oninput="updateOptionImagePreview('optionAImage', 'optionAImagePreview')">
+                            <div class="option-image-preview" id="optionAImagePreview"></div>
                         </div>
                         <div class="form-group">
                             <input type="text" id="optionB" placeholder="Opção B (use $...$ para fórmulas)" oninput="updateMathPreview('optionB', 'optionBPreview')">
                             <div class="math-preview" id="optionBPreview"></div>
+                            <input type="text" id="optionBImage" class="option-image-input" placeholder="URL da imagem para Opção B (opcional)" oninput="updateOptionImagePreview('optionBImage', 'optionBImagePreview')">
+                            <div class="option-image-preview" id="optionBImagePreview"></div>
                         </div>
                         <div class="form-group">
                             <input type="text" id="optionC" placeholder="Opção C (use $...$ para fórmulas)" oninput="updateMathPreview('optionC', 'optionCPreview')">
                             <div class="math-preview" id="optionCPreview"></div>
+                            <input type="text" id="optionCImage" class="option-image-input" placeholder="URL da imagem para Opção C (opcional)" oninput="updateOptionImagePreview('optionCImage', 'optionCImagePreview')">
+                            <div class="option-image-preview" id="optionCImagePreview"></div>
                         </div>
                         <div class="form-group">
                             <input type="text" id="optionD" placeholder="Opção D (use $...$ para fórmulas)" oninput="updateMathPreview('optionD', 'optionDPreview')">
                             <div class="math-preview" id="optionDPreview"></div>
+                            <input type="text" id="optionDImage" class="option-image-input" placeholder="URL da imagem para Opção D (opcional)" oninput="updateOptionImagePreview('optionDImage', 'optionDImagePreview')">
+                            <div class="option-image-preview" id="optionDImagePreview"></div>
                         </div>
                     </div>
 
@@ -591,9 +600,6 @@
             </div>
         </div>
     </div>
-    
-    <!-- Indicador de áudio -->
-    <div class="audio-indicator" id="audioIndicator">🔊 Reproduzindo som...</div>
 
     <script>
         // Configuração inicial
@@ -614,6 +620,7 @@
                     "$12$",
                     "$14$"
                 ],
+                optionImages: [null, null, null, null, null],
                 correct: 3,
                 image: null,
                 imageCaption: null
@@ -627,36 +634,10 @@
                     "$36 m$",
                     "$40 m$"
                 ],
-                correct: 0,
-                image: "bola.jpg",
-                                imageStyle: "width: 70%; height: auto; display: block; margin: 10px auto;"
-            },
-            {
-                question: "Uma empresa de embalagens recebeu um pedido para confeccionar 10.000 caixas para transporte de leite longa vida. Cada caixa tem as dimensões internas de 25 cm x 15 cm x 5 cm. Considerando que a espessura do papelão é desprezível e desprezando as abas de fixação, qual é a área total aproximada de papelão, em metros quadrados, necessária para atender a esse pedido?",
-                options: ["321,8", "3280", "3820", "3208", "32,8"],
-                correct: 1,
-                image: "bloco.jpg",
-                                imageStyle: "width: 70%; height: auto; display: block; margin: 10px auto;"
-            },
-            {
-                question: "Em um prisma hexagonal regular, a aresta da base mede 3 cm e a aresta da face lateral mede 6 cm. Qual é, aproximadamente, a sua área total? (em metros quadrados)",
-                options: ["153,9 ", "15,39", "1,539", "108", "180"],
+                optionImages: [null, null, null, null, null],
                 correct: 0,
                 image: null,
                 imageCaption: null
-            },
-            {
-                question: "(Enem) Um fazendeiro tem um depósito para armazenar leite formado por duas partes cúbicas que se comunicam, como indicado na figura. A aresta da parte cúbica de baixo tem medida igual ao dobro da medida da aresta da parte cúbica de cima. A torneira utilizada para encher o depósito tem vazão constante e levou minutos para encher metade da parte de baixo. Quantos minutos essa torneira levará para encher completamente o restante do depósito?",
-                options: [
-                    "$8$",
-                    "$10$", 
-                    "$16$",
-                    "$18$",
-                    "$24$"
-                ],
-                correct: 1,
-                image: "bloco2bloco.jpg",
-                                imageStyle: "width: 60%; height: auto; display: block; margin: 10px auto;"
             }
         ];
 
@@ -690,6 +671,19 @@
                 previewContainer.style.display = 'block';
             } else {
                 previewContainer.style.display = 'none';
+            }
+        }
+
+        // Função para pré-visualizar imagens das opções
+        function updateOptionImagePreview(inputId, previewId) {
+            const imageUrl = document.getElementById(inputId).value;
+            const preview = document.getElementById(previewId);
+            
+            if (imageUrl && isValidUrl(imageUrl)) {
+                preview.innerHTML = `<img src="${imageUrl}" alt="Pré-visualização">`;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
             }
         }
         
@@ -866,11 +860,15 @@
                         ${question.options.map((option, index) => `
                             <div class="option" onclick="selectAnswer(${index}, this)">
                                 <span class="option-letter">${String.fromCharCode(65 + index)})</span>
-                                <span class="option-content">${option}</span>
+                                <div class="option-content">
+                                    <div>${option}</div>
+                                    ${question.optionImages && question.optionImages[index] ? 
+                                        `<div class="question-image"><img src="${question.optionImages[index]}" alt="Imagem da opção" style="max-width: 100%; margin-top: 10px;"></div>` : 
+                                        ''}
+                                </div>
                             </div>
                         `).join('')}
                     </div>
-                    <!-- BOTÕES DE NAVEGAÇÃO REMOVIDOS PARA AVANÇO AUTOMÁTICO -->
                 </div>
             `;
 
@@ -908,15 +906,13 @@
             if (answerIndex !== correctIndex) {
                 // CORREÇÃO: Garantir que a opção incorreta sempre fique vermelha
                 optionElement.classList.add('incorrect');
-                playErrorSound();
                 
                 // Avançar automaticamente após 2 segundos
                 setTimeout(() => {
                     nextQuestion();
                 }, 2000);
             } else {
-                // Tocar som de acerto e mostrar fogos de artifício
-                playSuccessSound();
+                // Mostrar fogos de artifício
                 createFireworks();
                 
                 // Avançar automaticamente após 1 segundo no acerto
@@ -971,131 +967,6 @@
             setTimeout(() => {
                 alert('Avaliação finalizada com sucesso! Seu resultado está pronto para ser compartilhado.');
             }, 1000);
-        }
-
-        // Função para tocar som de erro
-        function playErrorSound() {
-            const audioIndicator = document.getElementById('audioIndicator');
-            audioIndicator.style.display = 'block';
-            audioIndicator.textContent = '🔊 Som de erro...';
-            
-            // Criar contexto de áudio
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Criar oscilador para o som de erro (pel, pel, pel, pel)
-            let time = audioContext.currentTime;
-            
-            // Criar 4 tons curtos
-            for (let i = 0; i < 4; i++) {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                
-                oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(300 + i * 50, time); // Frequência aumenta a cada tom
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                // Envelope do som
-                gainNode.gain.setValueAtTime(0, time);
-                gainNode.gain.linearRampToValueAtTime(0.3, time + 0.05);
-                gainNode.gain.linearRampToValueAtTime(0, time + 0.15);
-                
-                oscillator.start(time);
-                oscillator.stop(time + 0.15);
-                
-                time += 0.2; // Espaço entre os tons
-            }
-            
-            // Som de palmas após os tons
-            setTimeout(() => {
-                audioIndicator.textContent = '🔊 Palmas...';
-                
-                // Criar ruído para simular palmas
-                const bufferSize = audioContext.sampleRate * 0.1; // 0.1 segundos
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1; // Ruído branco
-                }
-                
-                const source = audioContext.createBufferSource();
-                source.buffer = buffer;
-                
-                const gainNode = audioContext.createGain();
-                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                
-                source.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
-                source.start();
-                
-                // Esconder indicador após o som
-                setTimeout(() => {
-                    audioIndicator.style.display = 'none';
-                }, 500);
-            }, 900);
-        }
-
-        // Função para tocar som de acerto
-        function playSuccessSound() {
-            const audioIndicator = document.getElementById('audioIndicator');
-            audioIndicator.style.display = 'block';
-            audioIndicator.textContent = '🔊 Som de acerto!';
-            
-            // Criar contexto de áudio
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Criar oscilador para o som de acerto (tom ascendente)
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.5);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            // Envelope do som
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
-            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
-            
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.5);
-            
-            // Som de palmas após o tom
-            setTimeout(() => {
-                audioIndicator.textContent = '🔊 Palmas!';
-                
-                // Criar ruído para simular palmas
-                const bufferSize = audioContext.sampleRate * 0.3; // 0.3 segundos
-                const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-                const data = buffer.getChannelData(0);
-                
-                for (let i = 0; i < bufferSize; i++) {
-                    data[i] = Math.random() * 2 - 1; // Ruído branco
-                }
-                
-                const source = audioContext.createBufferSource();
-                source.buffer = buffer;
-                
-                const gainNode2 = audioContext.createGain();
-                gainNode2.gain.setValueAtTime(0.5, audioContext.currentTime);
-                gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                
-                source.connect(gainNode2);
-                gainNode2.connect(audioContext.destination);
-                
-                source.start();
-                
-                // Esconder indicador após o som
-                setTimeout(() => {
-                    audioIndicator.style.display = 'none';
-                }, 500);
-            }, 600);
         }
 
         // Função melhorada para criar fogos de artifício - MAIORES E MAIS QUANTIDADE
@@ -1212,6 +1083,10 @@
             const optionB = document.getElementById('optionB').value;
             const optionC = document.getElementById('optionC').value;
             const optionD = document.getElementById('optionD').value;
+            const optionAImage = document.getElementById('optionAImage').value;
+            const optionBImage = document.getElementById('optionBImage').value;
+            const optionCImage = document.getElementById('optionCImage').value;
+            const optionDImage = document.getElementById('optionDImage').value;
             const correctAnswer = parseInt(document.getElementById('correctAnswer').value);
 
             if (!newQuestion || !optionA || !optionB || !optionC || !optionD) {
@@ -1222,6 +1097,7 @@
             questions.push({
                 question: newQuestion,
                 options: [optionA, optionB, optionC, optionD],
+                optionImages: [optionAImage || null, optionBImage || null, optionCImage || null, optionDImage || null],
                 correct: correctAnswer,
                 image: questionImage || null,
                 imageCaption: imageCaption || null
@@ -1237,6 +1113,10 @@
             document.getElementById('optionB').value = '';
             document.getElementById('optionC').value = '';
             document.getElementById('optionD').value = '';
+            document.getElementById('optionAImage').value = '';
+            document.getElementById('optionBImage').value = '';
+            document.getElementById('optionCImage').value = '';
+            document.getElementById('optionDImage').value = '';
             
             // Limpar previews
             document.getElementById('questionPreview').innerHTML = '';
@@ -1245,6 +1125,10 @@
             document.getElementById('optionCPreview').innerHTML = '';
             document.getElementById('optionDPreview').innerHTML = '';
             document.getElementById('imagePreviewContainer').style.display = 'none';
+            document.getElementById('optionAImagePreview').style.display = 'none';
+            document.getElementById('optionBImagePreview').style.display = 'none';
+            document.getElementById('optionCImagePreview').style.display = 'none';
+            document.getElementById('optionDImagePreview').style.display = 'none';
 
             await loadQuestionsList();
             alert('Questão adicionada com sucesso!');
@@ -1281,6 +1165,3 @@
     </script>
 </body>
 </html>
-
-
-
